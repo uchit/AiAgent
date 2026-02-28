@@ -1,0 +1,20 @@
+[
+  {
+    "title": "FIFA 21",
+    "developer": "EA Vancouver",
+    "publisher": "Electronic Arts",
+    "release_date": "9 October 2020",
+    "platforms": ["PS4", "PS5", "Xbox One", "PC"],
+    "genre": "Sports",
+    "description": "Football simulation game"
+  },
+  {
+    "title": "God of War Ragnarök",
+    "developer": "Santa Monica Studio",
+    "publisher": "Sony Interactive Entertainment",
+    "release_date": "9 November 2022",
+    "platforms": ["PS4", "PS5"],
+    "genre": "Action-adventure",
+    "description": "Norse mythology action game"
+  }
+]

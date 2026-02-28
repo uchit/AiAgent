@@ -7,11 +7,10 @@ os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
 
 try:
     from .lib.vector_db import VectorDB
+    from .lib.agent import GameAgent
 except ImportError:
     from lib.vector_db import VectorDB
-
-from agent_tools.game_tools import VectorDBTool, ResultEvaluator, WebSearchTool
-from agent_tools.game_agent import GameAgent
+    from lib.agent import GameAgent
 
 logging.basicConfig(level=logging.INFO)
 
@@ -31,34 +30,30 @@ def load_games():
     return games
 
 def main():
-    # Initialize VectorDB
-    db = VectorDB(collection_name="games_collection", persist_dir=str(PROJECT_DIR / "chromadb"))
+    # Initialize DB
+    db = VectorDB(
+        collection_name="games_collection",
+        persist_dir=str(PROJECT_DIR / "chromadb"),
+    )
 
     # Load and ingest games
     games = load_games()
     db.ingest(games)
 
-    # Initialize tools
-    vector_tool = VectorDBTool(db)
-    evaluator = ResultEvaluator(distance_threshold=200.0)
-    web_tool = WebSearchTool(api_key=os.environ.get("TAVILY_API_KEY", ""))  # Set your Tavily key
-
     # Initialize agent
-    agent = GameAgent(vector_tool, evaluator, web_tool)
+    agent = GameAgent(vector_db=db)
 
     # Example queries
     queries = [
-        "When was Pokémon Gold and Silver released?",
-        "Which platform is Minecraft available on?",
-        "Upcoming VR space shooter in 2026?"
+        "Open world superhero action game",
+        "First Pokémon game released on Game Boy",
+        "Classic platformer by Nintendo"
     ]
 
     for q in queries:
-        result = agent.ask(q)
         logging.info(f"\nQuery: {q}")
-        logging.info(f"Answer: {result['answer']}")
-        logging.info(f"Source: {result['source']}")
-        logging.info(f"Reasoning: {result['reasoning']}")
+        answer = agent.answer_query(q)
+        logging.info(f"Agent Answer: {answer}\n{'-'*50}")
 
 if __name__ == "__main__":
     main()
