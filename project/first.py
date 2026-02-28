@@ -6,9 +6,9 @@ from pathlib import Path
 os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
 
 try:
-    from .lib.vector_db import VectorDB
+    from .vector_db import VectorDB
 except ImportError:
-    from lib.vector_db import VectorDB
+    from vector_db import VectorDB
 
 from agent_tools.game_tools import VectorDBTool, ResultEvaluator, WebSearchTool
 from agent_tools.game_agent import GameAgent
@@ -16,7 +16,7 @@ from agent_tools.game_agent import GameAgent
 logging.basicConfig(level=logging.INFO)
 
 PROJECT_DIR = Path(__file__).resolve().parent
-GAMES_DIR = PROJECT_DIR.parent / "games"
+GAMES_DIR = PROJECT_DIR / "games"
 
 def load_games():
     games = []
@@ -40,17 +40,17 @@ def main():
 
     # Initialize tools
     vector_tool = VectorDBTool(db)
-    evaluator = ResultEvaluator(distance_threshold=200.0)
-    web_tool = WebSearchTool(api_key=os.environ.get("TAVILY_API_KEY", ""))  # Set your Tavily key
+    evaluator = ResultEvaluator(distance_threshold=0.35)
+    web_tool = WebSearchTool(api_key=os.environ.get("TAVILY_API_KEY"))
 
     # Initialize agent
     agent = GameAgent(vector_tool, evaluator, web_tool)
 
     # Example queries
     queries = [
-        "When was Pokémon Gold and Silver released?",
+        "When was Super Mario World released?",
+        "Tell me more about the first game you mentioned.",
         "Which platform is Minecraft available on?",
-        "Upcoming VR space shooter in 2026?"
     ]
 
     for q in queries:
@@ -59,6 +59,12 @@ def main():
         logging.info(f"Answer: {result['answer']}")
         logging.info(f"Source: {result['source']}")
         logging.info(f"Reasoning: {result['reasoning']}")
+        if result.get("effective_query") and result["effective_query"] != q:
+            logging.info(f"Effective Query: {result['effective_query']}")
+        if result.get("citations"):
+            logging.info("Citations:")
+            for c in result["citations"]:
+                logging.info(f"  [{c['id']}] {c['label']} -> {c['source']}")
 
 if __name__ == "__main__":
     main()

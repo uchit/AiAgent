@@ -1,6 +1,9 @@
 import logging
-from typing import List, Dict
-import requests
+from typing import List, Dict, Optional
+try:
+    import requests
+except ImportError:  # pragma: no cover - optional dependency
+    requests = None
 
 logging.basicConfig(level=logging.INFO)
 
@@ -30,7 +33,7 @@ class VectorDBTool:
 # Tool 2: Result Evaluator
 # -----------------------------
 class ResultEvaluator:
-    def __init__(self, distance_threshold: float = 200.0):
+    def __init__(self, distance_threshold: float = 0.35):
         self.threshold = distance_threshold
 
     def is_sufficient(self, results: List[Dict]) -> bool:
@@ -47,20 +50,26 @@ class ResultEvaluator:
 # Tool 3: Web Search Fallback with Tavily
 # -----------------------------
 class WebSearchTool:
-    def __init__(self, api_key: str):
-        if not api_key:
-            raise ValueError("Tavily API key is required for WebSearchTool.")
-        self.api_key = api_key
+    def __init__(self, api_key: Optional[str]):
+        self.api_key = api_key or ""
         self.endpoint = "https://api.tavily.com/search"
 
     def search(self, query: str, n_results: int = 3) -> List[Dict]:
+        if not self.api_key:
+            logging.info("[WebSearchTool] No Tavily API key configured.")
+            return []
+        if requests is None:
+            logging.warning("[WebSearchTool] requests is not installed.")
+            return []
         logging.info(f"[WebSearchTool] Performing Tavily search for query: {query}")
-        headers = {"Authorization": f"Bearer {self.api_key}"}
-        params = {"q": query, "limit": n_results}
-
-        response = requests.get(self.endpoint, headers=headers, params=params)
+        payload = {
+            "api_key": self.api_key,
+            "query": query,
+            "max_results": n_results,
+        }
+        response = requests.post(self.endpoint, json=payload, timeout=20)
         if response.status_code != 200:
-            logging.warning(f"[WebSearchTool] API call failed: {response.status_code}")
+            logging.warning(f"[WebSearchTool] API call failed: {response.status_code} {response.text[:200]}")
             return []
 
         data = response.json()
